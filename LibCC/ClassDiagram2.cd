@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="LibCC.CClase">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAEAAAAAAAAAAAAgAJAAAAAIIAAAAAQEAEACAA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_NameSpace" />
+      <Property Name="FicheroCS" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="LibCC.CDirectorio">
+    <Position X="12.25" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEEQAAAAAAAACAAAAIAAgARAAAAAAAAAAAAAAAEAAQA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Padre" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="lElementoDisco" />
+    </ShowAsCollectionAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="LibCC.CFichero">
+    <Position X="8.75" Y="3.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAAAAAAAAAAgABAAAAAAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Padre" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="LibCC.CFicheroCS">
+    <Position X="4.25" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IEAACAAAAAAAKAAIAAAAAAAIAAAEAAAAAAAAAAGACAA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LibCC.CNameSpace">
+    <Position X="4.5" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AEAAo0AAEAgBCAAAAAAAgAJAAAgAACAAAAAAAAGACBA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LibCC.CFicheroDeCodigo">
+    <Position X="6.25" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAAAAAAEAAAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LibCC.CFicheroDeTexto">
+    <Position X="9" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="LibCC.IElementoDisco">
+    <Position X="9" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAAAAAAAAAAgABAAAAAAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>LibCC.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

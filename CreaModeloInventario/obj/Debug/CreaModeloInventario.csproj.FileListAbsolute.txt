@@ -1,0 +1,8 @@
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\obj\Debug\CreaModeloInventario.csprojResolveAssemblyReference.cache
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\bin\Debug\CreaModeloInventario.exe.config
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\bin\Debug\CreaModeloInventario.exe
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\bin\Debug\CreaModeloInventario.pdb
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\bin\Debug\LibCC.dll
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\bin\Debug\LibCC.pdb
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\obj\Debug\CreaModeloInventario.exe
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CreaModeloInventario\obj\Debug\CreaModeloInventario.pdb

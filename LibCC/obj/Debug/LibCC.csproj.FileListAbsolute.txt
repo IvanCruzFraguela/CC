@@ -1,0 +1,5 @@
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\LibCC\obj\Debug\LibCC.csprojResolveAssemblyReference.cache
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\LibCC\bin\Debug\LibCC.dll
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\LibCC\bin\Debug\LibCC.pdb
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\LibCC\obj\Debug\LibCC.dll
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\LibCC\obj\Debug\LibCC.pdb

@@ -1,0 +1,7 @@
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CCUnitTest\bin\Debug\CCUnitTest.dll
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CCUnitTest\bin\Debug\CCUnitTest.pdb
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CCUnitTest\bin\Debug\LibCC.dll
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CCUnitTest\bin\Debug\LibCC.pdb
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CCUnitTest\obj\Debug\CCUnitTest.csprojResolveAssemblyReference.cache
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CCUnitTest\obj\Debug\CCUnitTest.dll
+C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp\CC\CCUnitTest\obj\Debug\CCUnitTest.pdb
