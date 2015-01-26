@@ -7,12 +7,41 @@ using System.Threading.Tasks;
 
 namespace LibCC
 {
+    public static class LibCCUtils
+    {
+        public static string StringClassAccess(EClassAccess ca)
+        {
+            switch (ca)
+            {
+                case EClassAccess.Private: return "private ";
+                case EClassAccess.Protected: return "protected ";
+                case EClassAccess.Internal: return "internal ";
+                case EClassAccess.Public: return "public ";
+                default: throw new Exception("EClassAccess no considerado: " + ca.ToString());
+            }
+        }
+        public static string StringMethodAccess(EMethodAccess ma)
+        {
+            switch (ma)
+            {
+                case EMethodAccess.Private: return "private ";
+                case EMethodAccess.Protected: return "protected ";
+                case EMethodAccess.Internal: return "internal ";
+                case EMethodAccess.Public: return "public ";
+                default: throw new Exception("EMethodAccess no considerado " + ma.ToString());
+            }
+        }
+    }
     internal interface IElementoDisco
     {
         string Nombre { get; set; }
         CDirectorio Padre { get; set; }
         string NombreCompleto(string Separador);
         bool Existe();
+    }
+    public interface ITipoDato
+    {
+        string Nombre { get; }
     }
     public interface IClasificador
     {
@@ -139,10 +168,15 @@ namespace LibCC
                 return this.Padre.NombreCompleto(Separador) + Separador + this.Nombre;
             }
         }
+        public string NombreCompleto()
+        {
+            return this.NombreCompleto(Path.DirectorySeparatorChar.ToString());
+        }
 
         internal void CreateDirectory()
         {
-            Directory.CreateDirectory(this.NombreCompleto("\\"));
+            var aux = this.NombreCompleto();
+            Directory.CreateDirectory(aux);
         }
     }
     public class CFichero : IElementoDisco
@@ -202,6 +236,10 @@ namespace LibCC
                 return this.Padre.NombreCompleto(Separador) + Separador + this.Nombre;
             }
         }
+        public string NombreCompleto()
+        {
+            return this.NombreCompleto(Path.DirectorySeparatorChar.ToString());
+        }
         private string _Nombre;
         public string Nombre
         {
@@ -242,7 +280,6 @@ namespace LibCC
             }
         }
     }
-
     public class CFicheroCS : CFicheroDeCodigo
     {
         public CFicheroCS(string Nombre) : this(CDirectorio.UltimoCreado, Nombre) { }
@@ -271,6 +308,10 @@ namespace LibCC
 
         public bool IsOpen;
 
+        internal void WriteLine()
+        {
+            this.WriteLine("");
+        }
         internal void WriteLine(string p)
         {
             this.Open();
@@ -298,6 +339,11 @@ namespace LibCC
         {
             this.Open();
             tw.Write(p);
+        }
+
+        internal void Space()
+        {
+            this.Write(" ");
         }
     }
     public class CNameSpace
@@ -489,9 +535,16 @@ namespace LibCC
             }
         }
     }
-        public enum EClassAccess { Public, Protected,Internal,Private}
-    public class CClase : IClasificador
+    public enum EClassAccess { Public, Protected, Internal, Private }
+    public enum EMethodAccess { Public, Protected, Internal, Private }
+    interface IContenibleEnClase
     {
+        void Genera(CFicheroCS FicheroCS);
+    }
+    public class CClase : IClasificador, IContenibleEnClase, ITipoDato
+    {
+        private static CClase _UltimaGenerada;
+        public static CClase UltimaGenerada { get { return _UltimaGenerada; } }
         private CFicheroCS _FicheroCS;
         public CFicheroCS FicheroCS
         {
@@ -518,6 +571,7 @@ namespace LibCC
 
             NameSpace.AddClasificador(this);
             this.FicheroCS = FicheroCS;
+            _UltimaGenerada = this;
         }
         public CClase(string Nombre) : this(CNameSpace.UltimoCreado, CFicheroCS.UltimoCreado, Nombre) { }
         private CNameSpace _NameSpace;
@@ -571,26 +625,162 @@ namespace LibCC
             }
         }
         public EClassAccess ClassAccess = EClassAccess.Internal;
-        protected void WriteClassAccess()
+        protected void WriteClassAccess(CFicheroCS fich)
         {
-            switch(this.ClassAccess){
-                case EClassAccess.Private: this.FicheroCS.Write("private ");
-                    break;
-                case EClassAccess.Protected: this.FicheroCS.Write("protected ");
-                    break;
-                case EClassAccess.Internal: this.FicheroCS.Write("internal ");
-                    break;
-                case EClassAccess.Public: this.FicheroCS.Write("public ");
-                    break;
-            }
+            fich.Write(LibCCUtils.StringClassAccess(this.ClassAccess));
         }
         public void Genera()
         {
-            this.FicheroCS.WriteTabs();
-            this.WriteClassAccess();
-            this.FicheroCS.WriteLine("class " + this.Nombre + "{");
-            this.FicheroCS.WriteTabs();
-            this.FicheroCS.WriteLine("}");
+            this.Genera(this.FicheroCS);
+        }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.WriteTabs();
+            this.WriteClassAccess(fich);
+            fich.WriteLine("class " + this.Nombre + "{");
+            foreach (IContenibleEnClase cec in this.lContenibleEnClase)
+            {
+                cec.Genera(FicheroCS);
+            }
+            fich.WriteTabs();
+            fich.WriteLine("}");
+        }
+        private List<IContenibleEnClase> lContenibleEnClase = new List<IContenibleEnClase>();
+        internal void AddContenibleEnClase(IContenibleEnClase ContenibleEnClase)
+        {
+            lContenibleEnClase.Add(ContenibleEnClase);
         }
     }
+    public enum EDireccionParametro { dpIn, dpOut, dpRef }
+    public class CParametro
+    {
+        public ITipoDato td;
+        public string Nombre;
+        public EDireccionParametro DireccionParametro = EDireccionParametro.dpIn;
+        public CParametro(string Nombre, ITipoDato td, EDireccionParametro DireccionParametro = EDireccionParametro.dpIn)
+        {
+            this.Nombre = Nombre;
+            this.td = td;
+            this.DireccionParametro = DireccionParametro;
+        }
+
+        internal void Genera(CFicheroCS fich)
+        {
+            fich.Write(this.td.Nombre);
+            fich.Space();
+            fich.Write(this.Nombre);
+        }
+    }
+    public class CMetodo : IContenibleEnClase
+    {
+        public string Nombre;
+        private string _TipoDatoDevuelto = "void";
+        public string TipoDatoDevuelto
+        {
+            get
+            {
+                return this._TipoDatoDevuelto;
+            }
+            set
+            {
+                this._TipoDatoDevuelto = value;
+            }
+        }
+        public CMetodo(CClase Clase, string Nombre)
+        {
+            Clase.AddContenibleEnClase(this);
+            this.Nombre = Nombre;
+        }
+        public CMetodo(string Nombre) : this(CClase.UltimaGenerada, Nombre) { }
+        private EMethodAccess _MethodAccess = EMethodAccess.Public;
+        public EMethodAccess MethodAccess
+        {
+            get
+            {
+                return this._MethodAccess;
+            }
+            set
+            {
+                this._MethodAccess = value;
+            }
+        }
+        protected void WriteMethodAccess(CFicheroCS fich)
+        {
+            fich.Write(LibCCUtils.StringMethodAccess(this.MethodAccess));
+        }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.AddTab();
+            fich.WriteTabs();
+            this.WriteMethodAccess(fich);
+            fich.Write(this.TipoDatoDevuelto);
+            fich.Space();
+            fich.Write(this.Nombre);
+            fich.Write("(");
+            bool Primero = true;
+            if (_lParametros != null) {
+                foreach (CParametro p in this.lParametros)
+                {
+                    if (Primero)
+                    {
+                        Primero = false;
+                    }
+                    else
+                    {
+                        fich.Write(",");
+                    }
+                    p.Genera(fich);
+                }
+            }
+            fich.Write("){");
+            fich.WriteLine();
+            //bucle instrucciones método
+            fich.WriteTabs();
+            fich.Write("}");
+            fich.WriteLine();
+            fich.RemoveTab();
+        }
+
+        private List<CParametro> _lParametros;
+        public List<CParametro> lParametros
+        {
+            get
+            {
+                if (_lParametros == null)
+                {
+                    _lParametros = new List<CParametro>();
+                }
+                return _lParametros;
+            }
+        }
+        public void AddParameter(String param1, ITipoDato td)
+        {
+            this.lParametros.Add(new CParametro(param1, td));
+        }
+
+
+
+    }
+    public static class TDB
+    {
+        public class CString:ITipoDato
+        {
+            public string Nombre
+            {
+                get
+                {
+                    return "string";
+                }
+            }
+        }
+        private static CString _tdString = new CString();
+        public static ITipoDato tdString
+        {
+            get
+            {
+                return _tdString;
+            }
+        }
+    }
+    //TODO:Intenta solucionar el problema de que escriba 2 veces el mismo namespace al tener dos clases en el mismo fichero
 }
