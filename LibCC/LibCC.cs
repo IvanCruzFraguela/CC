@@ -289,7 +289,6 @@ namespace LibCC
             _UltimoCreado = this;
             lFicherosCSCreados.Add(this);
         }
-        internal static CFicheroCS _UltimoCreado;
         private static List<CFicheroCS> _lFicherosCSCreados;
         internal static List<CFicheroCS> lFicherosCSCreados
         {
@@ -302,7 +301,15 @@ namespace LibCC
                 return _lFicherosCSCreados;
             }
         }
+        internal static CFicheroCS _UltimoCreado;
         public static CFicheroCS UltimoCreado { get { return _UltimoCreado; } }
+        public static void Clear()
+        {
+            if (_lFicherosCSCreados != null)
+            {
+                _lFicherosCSCreados.Clear();
+            }
+        }
         public CNameSpace NameSpace;
         public bool NameSpaceGenerado = false;
 
@@ -349,6 +356,10 @@ namespace LibCC
     public class CNameSpace
     {
         private static List<CNameSpace> lNameSpaceCreados = new List<CNameSpace>();
+        public static void Clear()
+        {
+            lNameSpaceCreados.Clear();
+        }
         private static CNameSpace _UltimoCreado;
         public static CNameSpace UltimoCreado
         {
@@ -521,8 +532,11 @@ namespace LibCC
                 {
                     //Fichero en el que se genera para añadirlo al namespace, poner lo del namespace, luego lo de la clase y al final, recorrer los ficheros abiertos y cerrar el namespace 
                     CFicheroCS fich = cla.FicheroCS;
-                    lFicheroCSEnLosQueSeGenera.Add(fich);
-                    fich.WriteLine("namespace " + this.Nombre + "{");
+                    if (!lFicheroCSEnLosQueSeGenera.Contains(fich))
+                    {
+                        lFicheroCSEnLosQueSeGenera.Add(fich);
+                        fich.WriteLine("namespace " + this.Nombre + "{");
+                    }
                     fich.AddTab();
                     cla.Genera();
                     fich.RemoveTab();
@@ -718,7 +732,8 @@ namespace LibCC
             fich.Write(this.Nombre);
             fich.Write("(");
             bool Primero = true;
-            if (_lParametros != null) {
+            if (_lParametros != null)
+            {
                 foreach (CParametro p in this.lParametros)
                 {
                     if (Primero)
@@ -761,9 +776,9 @@ namespace LibCC
 
 
     }
-    public static class TDB
+    public static class CTDB
     {
-        public class CString:ITipoDato
+        public class CString : ITipoDato
         {
             public string Nombre
             {
@@ -782,5 +797,4 @@ namespace LibCC
             }
         }
     }
-    //TODO:Intenta solucionar el problema de que escriba 2 veces el mismo namespace al tener dos clases en el mismo fichero
 }
