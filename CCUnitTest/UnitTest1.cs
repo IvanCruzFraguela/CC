@@ -51,7 +51,7 @@ namespace CCUnitTest
             CNameSpace.GeneraTodosNameSpace();
 
             string[] resultado = File.ReadAllLines(f.NombreCompleto());
-            Assert.AreEqual(resultado[2], "\t\tpublic void Metodo1(){");
+            Assert.AreEqual(resultado[3], "\t\tpublic void Metodo1(){");
             
             CNameSpace.Clear();
             FinalizeFich(); 
@@ -70,7 +70,7 @@ namespace CCUnitTest
             CNameSpace.GeneraTodosNameSpace();
 
             string[] resultado = File.ReadAllLines(f.NombreCompleto());
-            Assert.AreEqual(resultado[2], "\t\tpublic MiTipoDato Metodo1(Clase1 Parametro1,string Parametro2){");
+            Assert.AreEqual(resultado[3], "\t\tpublic MiTipoDato Metodo1(Clase1 Parametro1,string Parametro2){");
 
             CNameSpace.Clear();
             FinalizeFich(); 
@@ -143,9 +143,30 @@ namespace CCUnitTest
             CNameSpace.GeneraTodosNameSpace();
 
             string[] resultado = File.ReadAllLines(f.NombreCompleto());
-            Assert.AreEqual(resultado[2], "\t\tpublic int value1;");
-            Assert.AreEqual(resultado[5], "\t\tpublic Clase1 value2;");
+            Assert.AreEqual(resultado[3], "\t\tpublic int value1;");
+            Assert.AreEqual(resultado[6], "\t\tpublic Clase1 value2;");
             
+            CNameSpace.Clear();
+            FinalizeFich(); 
+        }
+        [TestMethod]
+        public void TestUsing()
+        {
+            InitFich(7);
+            CNameSpace ns = new CNameSpace("nsprueba1");
+            CClase c1 = new CClase("prueba1");
+            c1.AddUsing(CUsingNames.System);
+            c1.AddUsing(CUsingNames.System.IO);
+            CClase c2 = new CClase("prueba2");
+            c2.ClassAccess = EClassAccess.Public;
+            c2.AddUsing(CUsingNames.System.IO);
+            CNameSpace.GeneraTodosNameSpace();
+
+            string[] resultado = File.ReadAllLines(f.NombreCompleto());
+            Assert.AreEqual(resultado[0], "using System;");
+            Assert.AreEqual(resultado[1], "using System.IO;");
+            Assert.AreEqual(resultado[2], "");
+
             CNameSpace.Clear();
             FinalizeFich(); 
         }

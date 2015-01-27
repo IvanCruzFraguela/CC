@@ -7,6 +7,52 @@ using System.Threading.Tasks;
 
 namespace LibCC
 {
+    public interface IGeneraNombreNamespace
+    {
+        string NombreCompleto();
+    }
+    public static class CUsingNames
+    {
+        public class CSystem : LibCC.IGeneraNombreNamespace
+        {
+            public string NombreCompleto()
+            {
+                return "System";
+            }
+            public class CIO : LibCC.IGeneraNombreNamespace
+            {
+                public string NombreCompleto()
+                {
+                    return "System.IO";
+                }
+            }
+            private CIO _IO;
+            public CIO IO
+            {
+                get
+                {
+                    if (_IO == null)
+                    {
+                        _IO = new CIO();
+                    }
+                    return _IO;
+                }
+            }
+
+        }
+        private static CSystem _System;
+        public static CSystem System
+        {
+            get
+            {
+                if (_System == null)
+                {
+                    _System = new CSystem();
+                }
+                return _System;
+            }
+        }
+    }
     public static class LibCCUtils
     {
         public static string StringClassAccess(EClassAccess ca)
@@ -51,6 +97,7 @@ namespace LibCC
         bool Existe();
         void Genera();
         CFicheroCS FicheroCS { get; set; }
+        List<IGeneraNombreNamespace> lUsing { get; }
     }
     public class CDirectorio : IElementoDisco
     {
@@ -333,6 +380,11 @@ namespace LibCC
                     this.Padre.CreateDirectory();
                 }
                 tw = File.CreateText(this.NombreCompleto("\\"));
+                foreach (IGeneraNombreNamespace ns in this.lUsing)
+                {
+                    this.tw.WriteLine("using " + ns.NombreCompleto() + ";");
+                }
+                tw.WriteLine();
                 this.IsOpen = true;
             }
         }
@@ -352,8 +404,28 @@ namespace LibCC
         {
             this.Write(" ");
         }
+
+        internal List<IGeneraNombreNamespace> _lUsing;
+        public List<IGeneraNombreNamespace> lUsing
+        {
+            get
+            {
+                if (this._lUsing == null)
+                {
+                    this._lUsing = new List<IGeneraNombreNamespace>();
+                }
+                return this._lUsing;
+            }
+        }
+        public void AddUsing(IGeneraNombreNamespace NombreNameSpace)
+        {
+            if (!lUsing.Contains(NombreNameSpace))
+            {
+                this.lUsing.Add(NombreNameSpace);
+            }
+        }
     }
-    public class CNameSpace
+    public class CNameSpace : IGeneraNombreNamespace
     {
         private static List<CNameSpace> lNameSpaceCreados = new List<CNameSpace>();
         public static void Clear()
@@ -510,7 +582,10 @@ namespace LibCC
                 return this.NameSpace.NombreCompleto(Separador) + Separador + this.Nombre;
             }
         }
-
+        public string NombreCompleto()
+        {
+            return this.NombreCompleto(".");
+        }
         public static void GeneraTodosNameSpace()
         {
             foreach (CNameSpace ns in lNameSpaceCreados)
@@ -528,6 +603,16 @@ namespace LibCC
             if (!this.Generado)
             {
                 List<CFicheroCS> lFicheroCSEnLosQueSeGenera = new List<CFicheroCS>();
+                //preprocesamos todas las clases para generar en los ficheros los usign necesarios para las clases que se pondrán en ese fichero.
+
+                foreach (IClasificador cla in this.lClasificador)
+                {
+                    CFicheroCS fich = cla.FicheroCS;
+                    foreach (IGeneraNombreNamespace gnn in cla.lUsing)
+                    {
+                        fich.AddUsing(gnn);
+                    }
+                }
                 foreach (IClasificador cla in this.lClasificador)
                 {
                     //Fichero en el que se genera para añadirlo al namespace, poner lo del namespace, luego lo de la clase y al final, recorrer los ficheros abiertos y cerrar el namespace 
@@ -664,6 +749,23 @@ namespace LibCC
         {
             lContenibleEnClase.Add(ContenibleEnClase);
         }
+
+        internal List<IGeneraNombreNamespace> _lUsing;
+        public List<IGeneraNombreNamespace> lUsing
+        {
+            get
+            {
+                if (this._lUsing == null)
+                {
+                    this._lUsing = new List<IGeneraNombreNamespace>();
+                }
+                return this._lUsing;
+            }
+        }
+        public void AddUsing(IGeneraNombreNamespace NombreNameSpace)
+        {
+            this.lUsing.Add(NombreNameSpace);
+        }
     }
     public enum EDireccionParametro { dpIn, dpOut, dpRef }
     public class CParametro
@@ -797,7 +899,7 @@ namespace LibCC
             this.Nombre = Nombre;
             this.TipoDato = TipoDato;
         }
-        public CAtributo(string Nombre,ITipoDato TipoDato) : this(CClase.UltimaGenerada, Nombre,TipoDato) { }
+        public CAtributo(string Nombre, ITipoDato TipoDato) : this(CClase.UltimaGenerada, Nombre, TipoDato) { }
         private EAccess _Access = EAccess.Public;
         public EAccess Access
         {
@@ -847,7 +949,7 @@ namespace LibCC
                 }
             }
         }
-        public class CVoid: ITipoDato
+        public class CVoid : ITipoDato
         {
             public string Nombre
             {
