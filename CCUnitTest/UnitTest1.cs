@@ -129,5 +129,25 @@ namespace CCUnitTest
             FinalizeFich(); 
         }
 
+        [TestMethod]
+        public void TestCClaseAnadirAtributo()
+        {
+            InitFich(6);
+
+            CNameSpace ns = new CNameSpace("nsprueba2");
+            CClase c = new CClase("Clase1");
+            CAtributo a = new CAtributo("value1", CTDB.tdInt);
+            CClase c2 = new CClase("Clase2");
+            CAtributo a2 = new CAtributo("value2", c);
+
+            CNameSpace.GeneraTodosNameSpace();
+
+            string[] resultado = File.ReadAllLines(f.NombreCompleto());
+            Assert.AreEqual(resultado[2], "\t\tpublic int value1;");
+            Assert.AreEqual(resultado[5], "\t\tpublic Clase1 value2;");
+            
+            CNameSpace.Clear();
+            FinalizeFich(); 
+        }
     }
 }

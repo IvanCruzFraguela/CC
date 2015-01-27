@@ -20,14 +20,14 @@ namespace LibCC
                 default: throw new Exception("EClassAccess no considerado: " + ca.ToString());
             }
         }
-        public static string StringMethodAccess(EMethodAccess ma)
+        public static string StringAccess(EAccess ma)
         {
             switch (ma)
             {
-                case EMethodAccess.Private: return "private ";
-                case EMethodAccess.Protected: return "protected ";
-                case EMethodAccess.Internal: return "internal ";
-                case EMethodAccess.Public: return "public ";
+                case EAccess.Private: return "private ";
+                case EAccess.Protected: return "protected ";
+                case EAccess.Internal: return "internal ";
+                case EAccess.Public: return "public ";
                 default: throw new Exception("EMethodAccess no considerado " + ma.ToString());
             }
         }
@@ -550,7 +550,7 @@ namespace LibCC
         }
     }
     public enum EClassAccess { Public, Protected, Internal, Private }
-    public enum EMethodAccess { Public, Protected, Internal, Private }
+    public enum EAccess { Public, Protected, Internal, Private }
     interface IContenibleEnClase
     {
         void Genera(CFicheroCS FicheroCS);
@@ -706,27 +706,23 @@ namespace LibCC
             this.Nombre = Nombre;
         }
         public CMetodo(string Nombre) : this(CClase.UltimaGenerada, Nombre) { }
-        private EMethodAccess _MethodAccess = EMethodAccess.Public;
-        public EMethodAccess MethodAccess
+        private EAccess _Access = EAccess.Public;
+        public EAccess Access
         {
             get
             {
-                return this._MethodAccess;
+                return this._Access;
             }
             set
             {
-                this._MethodAccess = value;
+                this._Access = value;
             }
-        }
-        protected void WriteMethodAccess(CFicheroCS fich)
-        {
-            fich.Write(LibCCUtils.StringMethodAccess(this.MethodAccess));
         }
         public void Genera(CFicheroCS fich)
         {
             fich.AddTab();
             fich.WriteTabs();
-            this.WriteMethodAccess(fich);
+            fich.Write(LibCCUtils.StringAccess(this.Access));
             fich.Write(this.TipoDatoDevuelto);
             fich.Space();
             fich.Write(this.Nombre);
@@ -772,7 +768,60 @@ namespace LibCC
         {
             this.lParametros.Add(new CParametro(param1, td));
         }
-
+    }
+    public class CAtributo : IContenibleEnClase
+    {
+        public string Nombre;
+        private ITipoDato _TipoDato = null;
+        public ITipoDato TipoDato
+        {
+            get
+            {
+                if (_TipoDato == null)
+                {
+                    return CTDB.tdVoid;
+                }
+                else
+                {
+                    return this._TipoDato;
+                }
+            }
+            set
+            {
+                this._TipoDato = value;
+            }
+        }
+        public CAtributo(CClase Clase, string Nombre, ITipoDato TipoDato)
+        {
+            Clase.AddContenibleEnClase(this);
+            this.Nombre = Nombre;
+            this.TipoDato = TipoDato;
+        }
+        public CAtributo(string Nombre,ITipoDato TipoDato) : this(CClase.UltimaGenerada, Nombre,TipoDato) { }
+        private EAccess _Access = EAccess.Public;
+        public EAccess Access
+        {
+            get
+            {
+                return this._Access;
+            }
+            set
+            {
+                this._Access = value;
+            }
+        }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.AddTab();
+            fich.WriteTabs();
+            fich.Write(LibCCUtils.StringAccess(this.Access));
+            fich.Write(this.TipoDato.Nombre);
+            fich.Space();
+            fich.Write(this.Nombre);
+            fich.Write(";");
+            fich.WriteLine();
+            fich.RemoveTab();
+        }
 
 
     }
@@ -788,12 +837,48 @@ namespace LibCC
                 }
             }
         }
+        public class CInt : ITipoDato
+        {
+            public string Nombre
+            {
+                get
+                {
+                    return "int";
+                }
+            }
+        }
+        public class CVoid: ITipoDato
+        {
+            public string Nombre
+            {
+                get
+                {
+                    return "void";
+                }
+            }
+        }
         private static CString _tdString = new CString();
+        private static CInt _tdInt = new CInt();
+        private static CVoid _tdVoid = new CVoid();
         public static ITipoDato tdString
         {
             get
             {
                 return _tdString;
+            }
+        }
+        public static ITipoDato tdInt
+        {
+            get
+            {
+                return _tdInt;
+            }
+        }
+        public static ITipoDato tdVoid
+        {
+            get
+            {
+                return _tdVoid;
             }
         }
     }
