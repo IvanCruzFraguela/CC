@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LibCC
 {
@@ -77,6 +74,22 @@ namespace LibCC
                 default: throw new Exception("EMethodAccess no considerado " + ma.ToString());
             }
         }
+        public static void WriteModifiers(CFicheroCS fich, HashSet<CModifierBase> SetModifier)
+        {
+            bool primero = true;
+            foreach (CModifierBase mo in SetModifier)
+            {
+                if (primero)
+                {
+                    primero = false;
+                }
+                else
+                {
+                    fich.Space();
+                }
+                mo.Genera(fich);
+            }
+        }
     }
     internal interface IElementoDisco
     {
@@ -94,7 +107,6 @@ namespace LibCC
         string Nombre { get; set; }
         CNameSpace NameSpace { get; set; }
         string NombreCompleto(string Separador);
-        bool Existe();
         void Genera();
         CFicheroCS FicheroCS { get; set; }
         List<IGeneraNombreNamespace> lUsing { get; }
@@ -636,9 +648,15 @@ namespace LibCC
     }
     public enum EClassAccess { Public, Protected, Internal, Private }
     public enum EAccess { Public, Protected, Internal, Private }
-    interface IContenibleEnClase
+    interface IGenerable
     {
         void Genera(CFicheroCS FicheroCS);
+    }
+    interface IContenibleEnClase : IGenerable
+    {
+    }
+    interface IContenibleEnInterfaz : IGenerable
+    {
     }
     public class CClase : IClasificador, IContenibleEnClase, ITipoDato
     {
@@ -695,10 +713,6 @@ namespace LibCC
                     this._NameSpace = value;
                 }
             }
-        }
-        public bool Existe()
-        {
-            throw new NotImplementedException();
         }
         public string NombreCompleto(string Separador)
         {
@@ -790,8 +804,8 @@ namespace LibCC
     public class CMetodo : IContenibleEnClase
     {
         public string Nombre;
-        private string _TipoDatoDevuelto = "void";
-        public string TipoDatoDevuelto
+        private ITipoDato _TipoDatoDevuelto = CTDB.tdVoid;
+        public ITipoDato TipoDatoDevuelto
         {
             get
             {
@@ -825,7 +839,7 @@ namespace LibCC
             fich.AddTab();
             fich.WriteTabs();
             fich.Write(LibCCUtils.StringAccess(this.Access));
-            fich.Write(this.TipoDatoDevuelto);
+            fich.Write(this.TipoDatoDevuelto.Nombre);
             fich.Space();
             fich.Write(this.Nombre);
             fich.Write("(");
@@ -981,6 +995,279 @@ namespace LibCC
             get
             {
                 return _tdVoid;
+            }
+        }
+    }
+    public class CInterfaz : IClasificador, IContenibleEnClase, ITipoDato
+    {
+        protected HashSet<CModifierBase> _SetModifier = null;
+        public HashSet<CModifierBase> SetModifier
+        {
+            get
+            {
+                if (_SetModifier == null)
+                {
+                    _SetModifier = new HashSet<CModifierBase>();
+                }
+                return _SetModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.SetModifier.Add(modifier);
+        }
+        private static CInterfaz _UltimaGenerada;
+        public static CInterfaz UltimaGenerada { get { return _UltimaGenerada; } }
+        private CFicheroCS _FicheroCS;
+        public CFicheroCS FicheroCS
+        {
+            get
+            {
+                return _FicheroCS;
+            }
+            set
+            {
+                _FicheroCS = value;
+            }
+        }
+        public CInterfaz(CNameSpace NameSpace, CFicheroCS FicheroCS, string Nombre)
+        {
+            this.Nombre = Nombre;
+            if (NameSpace == null)
+            {
+                throw new Exception("No puede haber una clase sin NameSpace. Namespace es null");
+            }
+            if (FicheroCS == null)
+            {
+                throw new Exception("No puede haber una clase sin FicheroCS. FicheroCS es null");
+            }
+
+            NameSpace.AddClasificador(this);
+            this.FicheroCS = FicheroCS;
+            _UltimaGenerada = this;
+        }
+        public CInterfaz(string Nombre) : this(CNameSpace.UltimoCreado, CFicheroCS.UltimoCreado, Nombre) { }
+        private CNameSpace _NameSpace;
+        public CNameSpace NameSpace
+        {
+            get
+            {
+                return _NameSpace;
+            }
+            set
+            {
+                if (this._NameSpace == null)
+                {
+                    if (value != null)
+                    {
+                        this._NameSpace = value;
+                    }
+                }
+                else
+                {
+                    this._NameSpace.RemoveClasificador(this);
+                    this._NameSpace = value;
+                }
+            }
+        }
+        public string NombreCompleto(string Separador)
+        {
+            if (this.NameSpace == null)
+            {
+                return this.Nombre;
+            }
+            else
+            {
+                return this.NameSpace.NombreCompleto(Separador) + Separador + this.Nombre;
+            }
+        }
+        private string _Nombre;
+        public string Nombre
+        {
+            get
+            {
+                return _Nombre;
+            }
+            set
+            {
+                _Nombre = value;
+            }
+        }
+        public void Genera()
+        {
+            this.Genera(this.FicheroCS);
+        }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.WriteTabs();
+            LibCCUtils.WriteModifiers(fich, this.SetModifier);
+            if (this.SetModifier.Count != 0)
+            {
+                fich.Space();
+            }
+            fich.WriteLine("interface " + this.Nombre + "{");
+            foreach (IContenibleEnInterfaz cec in this.lContenibleEnInterfaz)
+            {
+                cec.Genera(FicheroCS);
+            }
+            fich.WriteTabs();
+            fich.WriteLine("}");
+        }
+        private List<IContenibleEnInterfaz> lContenibleEnInterfaz = new List<IContenibleEnInterfaz>();
+        internal void AddContenibleEnInterfaz(IContenibleEnInterfaz ContenibleEnInterfaz)
+        {
+            lContenibleEnInterfaz.Add(ContenibleEnInterfaz);
+        }
+
+        internal List<IGeneraNombreNamespace> _lUsing;
+        public List<IGeneraNombreNamespace> lUsing
+        {
+            get
+            {
+                if (this._lUsing == null)
+                {
+                    this._lUsing = new List<IGeneraNombreNamespace>();
+                }
+                return this._lUsing;
+            }
+        }
+        public void AddUsing(IGeneraNombreNamespace NombreNameSpace)
+        {
+            this.lUsing.Add(NombreNameSpace);
+        }
+    }
+    public class CMetodoInterfaz : IContenibleEnInterfaz
+    {
+        public string Nombre;
+        private ITipoDato  _TipoDatoDevuelto = CTDB.tdVoid;
+        public ITipoDato TipoDatoDevuelto
+        {
+            get
+            {
+                return this._TipoDatoDevuelto;
+            }
+            set
+            {
+                this._TipoDatoDevuelto = value;
+            }
+        }
+        public CMetodoInterfaz(CInterfaz Interfaz, string Nombre)
+        {
+            Interfaz.AddContenibleEnInterfaz(this);
+            this.Nombre = Nombre;
+        }
+        public CMetodoInterfaz(string Nombre) : this(CInterfaz.UltimaGenerada, Nombre) { }
+        protected HashSet<CModifierBase> _SetModifier = null;
+        public HashSet<CModifierBase> SetModifier
+        {
+            get
+            {
+                if (_SetModifier == null)
+                {
+                    _SetModifier = new HashSet<CModifierBase>();
+                }
+                return _SetModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.SetModifier.Add(modifier);
+        }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.AddTab();
+            fich.WriteTabs();
+            LibCCUtils.WriteModifiers(fich, this.SetModifier);
+            fich.Write(this.TipoDatoDevuelto.Nombre);
+            fich.Space();
+            fich.Write(this.Nombre);
+            fich.Write("(");
+            bool Primero = true;
+            if (_lParametros != null)
+            {
+                foreach (CParametro p in this.lParametros)
+                {
+                    if (Primero)
+                    {
+                        Primero = false;
+                    }
+                    else
+                    {
+                        fich.Write(",");
+                    }
+                    p.Genera(fich);
+                }
+            }
+            fich.Write(");");
+            fich.WriteLine();
+            fich.RemoveTab();
+        }
+        private List<CParametro> _lParametros;
+        public List<CParametro> lParametros
+        {
+            get
+            {
+                if (_lParametros == null)
+                {
+                    _lParametros = new List<CParametro>();
+                }
+                return _lParametros;
+            }
+        }
+        public void AddParameter(String param1, ITipoDato td)
+        {
+            this.lParametros.Add(new CParametro(param1, td));
+        }
+    }
+
+    public class CModifierBase
+    {
+        protected string _Nombre;
+        public void Genera(CFicheroCS fich)
+        {
+            fich.Write(_Nombre);
+        }
+    }
+    public class CPublic : CModifierBase
+    {
+        public CPublic()
+        {
+            this._Nombre = "public";
+        }
+    }
+    public class CProtected : CModifierBase
+    {
+        public CProtected()
+        {
+            _Nombre = "protected";
+        }
+    }
+    public class CPrivate : CModifierBase
+    {
+        public CPrivate()
+        {
+            _Nombre = "private";
+        }
+    }
+    public class CInternal : CModifierBase
+    {
+        public CInternal()
+        {
+            _Nombre = "internal";
+        }
+    }
+    public static class Modifiers
+    {
+        private static CPublic _Public;
+        public static CPublic Public
+        {
+            get
+            {
+                if (_Public == null)
+                {
+                    _Public = new CPublic();
+                }
+                return _Public;
             }
         }
     }

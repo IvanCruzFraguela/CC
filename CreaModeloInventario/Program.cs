@@ -15,7 +15,7 @@ namespace CreaModeloInventario
             //Crear Clase Ubicacion Almacenable
             CDirectorio Base = new CDirectorio(null,@"C:\LiberKey\MyDocuments\Dropbox\Prog\cSharp");//El null inicial para que no lo meta en ningún directorio anterior
             CDirectorio Proyecto = new CDirectorio("GeneradoPruebas1");//Lo mete en el último directorio creado
-            CFicheroCS modelo = new CFicheroCS("Modelo.cs");//Lo mete en el último directorio creado
+            CFicheroCS modelo = new CFicheroCS("ModeloGenerado.cs");//Lo mete en el último directorio creado
             CNameSpace ns = new CNameSpace("Modelo");
             CClase CUbicacion = new CClase("CUbicacion");
             CNameSpace.GeneraTodosNameSpace();

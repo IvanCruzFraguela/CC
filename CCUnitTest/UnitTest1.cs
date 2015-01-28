@@ -36,7 +36,7 @@ namespace CCUnitTest
             Assert.IsTrue(File.Exists(f.NombreCompleto()));
 
             CNameSpace.Clear();
-            FinalizeFich(); 
+            FinalizeFich();
         }
 
 
@@ -52,9 +52,9 @@ namespace CCUnitTest
 
             string[] resultado = File.ReadAllLines(f.NombreCompleto());
             Assert.AreEqual(resultado[3], "\t\tpublic void Metodo1(){");
-            
+
             CNameSpace.Clear();
-            FinalizeFich(); 
+            FinalizeFich();
         }
         [TestMethod]
         public void TestCClaseAnadirMetodoConParametros()
@@ -64,16 +64,16 @@ namespace CCUnitTest
             CNameSpace ns = new CNameSpace("nsprueba2");
             CClase c = new CClase("Clase1");
             CMetodo m = new CMetodo("Metodo1");
-            m.TipoDatoDevuelto = "MiTipoDato";
+            m.TipoDatoDevuelto = CTDB.tdString;
             m.AddParameter("Parametro1", c);
             m.AddParameter("Parametro2", CTDB.tdString);
             CNameSpace.GeneraTodosNameSpace();
 
             string[] resultado = File.ReadAllLines(f.NombreCompleto());
-            Assert.AreEqual(resultado[3], "\t\tpublic MiTipoDato Metodo1(Clase1 Parametro1,string Parametro2){");
+            Assert.AreEqual(resultado[3], "\t\tpublic string Metodo1(Clase1 Parametro1,string Parametro2){");
 
             CNameSpace.Clear();
-            FinalizeFich(); 
+            FinalizeFich();
         }
         [TestMethod]
         public void TestCFichero_SoloUnNamespace()
@@ -95,10 +95,10 @@ namespace CCUnitTest
                     contador++;
                 }
             }
-            Assert.AreEqual(1,contador);
+            Assert.AreEqual(1, contador);
 
             CNameSpace.Clear();
-            FinalizeFich(); 
+            FinalizeFich();
         }
         [TestMethod]
         public void TestCFichero_2NamespaceEn1Fichero()
@@ -123,10 +123,10 @@ namespace CCUnitTest
                     contador++;
                 }
             }
-            Assert.AreEqual(2,contador);
+            Assert.AreEqual(2, contador);
 
             CNameSpace.Clear();
-            FinalizeFich(); 
+            FinalizeFich();
         }
 
         [TestMethod]
@@ -145,9 +145,9 @@ namespace CCUnitTest
             string[] resultado = File.ReadAllLines(f.NombreCompleto());
             Assert.AreEqual(resultado[3], "\t\tpublic int value1;");
             Assert.AreEqual(resultado[6], "\t\tpublic Clase1 value2;");
-            
+
             CNameSpace.Clear();
-            FinalizeFich(); 
+            FinalizeFich();
         }
         [TestMethod]
         public void TestUsing()
@@ -168,7 +168,51 @@ namespace CCUnitTest
             Assert.AreEqual(resultado[2], "");
 
             CNameSpace.Clear();
-            FinalizeFich(); 
+            FinalizeFich();
+        }
+        [TestMethod]
+        public void TestInterfaceSimple()
+        {
+            InitFich(2);
+
+            CNameSpace ns = new CNameSpace("nsprueba1");
+            CInterfaz i = new CInterfaz("Interface1");
+            i.AddModifier(Modifiers.Public);
+
+            CNameSpace.GeneraTodosNameSpace();
+
+            string[] resultado = File.ReadAllLines(f.NombreCompleto());
+            Assert.AreEqual("\tpublic interface Interface1{", resultado[2]);
+
+            CNameSpace.Clear();
+            FinalizeFich();
+        }
+        [TestMethod]
+        public void TestInterfaceConMetodos()
+        {
+            InitFich(2);
+
+            CNameSpace ns = new CNameSpace("nsprueba1");
+            CClase c = new CClase("Clase1");
+            CInterfaz i = new CInterfaz("Interface1");
+            i.AddModifier(Modifiers.Public);
+            CMetodoInterfaz m1 = new CMetodoInterfaz("MetodoInterfaz1");
+            m1.TipoDatoDevuelto = c;
+            CMetodoInterfaz m2 = new CMetodoInterfaz("MetodoInterfaz2");
+            m2.TipoDatoDevuelto = CTDB.tdString;
+            m2.AddParameter("Parametro1", c);
+            m2.AddParameter("Parametro2", CTDB.tdString);
+
+
+            CNameSpace.GeneraTodosNameSpace();
+
+            string[] resultado = File.ReadAllLines(f.NombreCompleto());
+            Assert.AreEqual("\tpublic interface Interface1{", resultado[4]);
+            Assert.AreEqual("\t\tClase1 MetodoInterfaz1();", resultado[5]);
+            Assert.AreEqual("\t\tstring MetodoInterfaz2(Clase1 Parametro1,string Parametro2);", resultado[6]);
+
+            CNameSpace.Clear();
+            FinalizeFich();
         }
     }
 }
