@@ -1,16 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LibCC
 {
+    /// <summary>
+    /// Habría que refinar las excepciones. De momento solo creamos una específica para las excepciones de LibCC
+    /// </summary>
+    class LibCCException : Exception
+    {
+        public LibCCException(string message) : base(message) { }
+    }
+    /// <summary>
+    /// Se usa para almacenar elementos que generen un nombre de NameSpace. Se usa para alamacenar CNameSpaces o namespaces de librería de forma homogénea
+    /// </summary>
     public interface IGeneraNombreNamespace
     {
         string NombreCompleto();
     }
+    /// <summary>
+    /// Clase para almacenar los Using de librería. Habría que generar una clase para cada Using que implemente la interfaz IGeneraNombreNamespace y una variable que la muestre de forma pública para usarla cómodamente. 
+    /// Lo ideal sería poder pasar una clase estática como parámetro pero no deja (o no sé cómo)
+    /// </summary>
     public static class CUsingNames
     {
         public class CSystem : LibCC.IGeneraNombreNamespace
@@ -55,26 +66,14 @@ namespace LibCC
     }
     public static class LibCCUtils
     {
-        public static string StringClassAccess(EClassAccess ca)
+        public static void WriteModifiers(CFicheroCS fich, HashSet<CModifierBase> SetModifier)
         {
-            switch (ca)
+            foreach (CModifierBase mo in SetModifier)
             {
-                case EClassAccess.Private: return "private ";
-                case EClassAccess.Protected: return "protected ";
-                case EClassAccess.Internal: return "internal ";
-                case EClassAccess.Public: return "public ";
-                default: throw new Exception("EClassAccess no considerado: " + ca.ToString());
-            }
-        }
-        public static string StringAccess(EAccess ma)
-        {
-            switch (ma)
-            {
-                case EAccess.Private: return "private ";
-                case EAccess.Protected: return "protected ";
-                case EAccess.Internal: return "internal ";
-                case EAccess.Public: return "public ";
-                default: throw new Exception("EMethodAccess no considerado " + ma.ToString());
+                if (mo.Genera(fich))
+                {
+                    fich.Space();
+                }
             }
         }
     }
@@ -89,12 +88,14 @@ namespace LibCC
     {
         string Nombre { get; }
     }
+    /// <summary>
+    /// Se usará para almacenar clasificadores y en general cualquier cosa que se pueda crear directamente en un NameSpace
+    /// </summary>
     public interface IClasificador
     {
         string Nombre { get; set; }
         CNameSpace NameSpace { get; set; }
         string NombreCompleto(string Separador);
-        bool Existe();
         void Genera();
         CFicheroCS FicheroCS { get; set; }
         List<IGeneraNombreNamespace> lUsing { get; }
@@ -202,7 +203,7 @@ namespace LibCC
 
         public bool Existe()
         {
-            return Directory.Exists(this.NombreCompleto("\\"));
+            return Directory.Exists(this.NombreCompleto());
         }
         public string NombreCompleto(string Separador)
         {
@@ -222,20 +223,14 @@ namespace LibCC
 
         internal void CreateDirectory()
         {
-            var aux = this.NombreCompleto();
-            Directory.CreateDirectory(aux);
+            Directory.CreateDirectory(this.NombreCompleto());
         }
     }
+    /// <summary>
+    /// Base de clases de fichero. Almacena en qué directorio está y qué nombre tiene
+    /// </summary>
     public class CFichero : IElementoDisco
     {
-        //protected static CFichero _UltimoGenerado;
-        //public static CFichero UltimoGenerado
-        //{
-        //    get
-        //    {
-        //        return _UltimoGenerado;
-        //    }
-        //}
         public CFichero(CDirectorio padre, string Nombre)
         {
             this.Nombre = Nombre;
@@ -270,7 +265,7 @@ namespace LibCC
         }
         public bool Existe()
         {
-            throw new NotImplementedException();
+            return File.Exists(this.NombreCompleto());
         }
         public string NombreCompleto(string Separador)
         {
@@ -287,25 +282,20 @@ namespace LibCC
         {
             return this.NombreCompleto(Path.DirectorySeparatorChar.ToString());
         }
-        private string _Nombre;
-        public string Nombre
-        {
-            get
-            {
-                return _Nombre;
-            }
-            set
-            {
-                _Nombre = value;
-            }
-        }
+        public string Nombre { get; set; }
     }
+    /// <summary>
+    /// Base de clases de fichero de texto. Almacena y StreamWriter para escribir
+    /// </summary>
     public class CFicheroDeTexto : CFichero
     {
         public CFicheroDeTexto(CDirectorio padre, string Nombre) : base(padre, Nombre) { }
         public CFicheroDeTexto(string Nombre) : base(Nombre) { }
-        protected TextWriter tw;
+        protected StreamWriter sw;
     }
+    /// <summary>
+    /// Fichero de código. Almacena los tabs a escribir
+    /// </summary>
     public class CFicheroDeCodigo : CFicheroDeTexto
     {
         public CFicheroDeCodigo(CDirectorio padre, string Nombre) : base(padre, Nombre) { }
@@ -323,9 +313,47 @@ namespace LibCC
         {
             for (byte i = 0; i < TabCount; i++)
             {
-                this.tw.Write("\t");
+                this.sw.Write("\t");
             }
         }
+        public bool IsOpen;
+        protected virtual void Open()
+        {
+            if (!this.IsOpen)
+            {
+                if (!this.Padre.Existe())
+                {
+                    this.Padre.CreateDirectory();
+                }
+                sw = File.CreateText(this.NombreCompleto());
+
+                this.IsOpen = true;
+            }
+        }
+        internal void Close()
+        {
+            sw.Close();
+            this.IsOpen = false;
+        }
+        internal void Write(string p)
+        {
+            this.Open();
+            sw.Write(p);
+        }
+        internal void WriteLine()
+        {
+            sw.WriteLine();
+        }
+        internal void WriteLine(string p)
+        {
+            this.Open();
+            sw.WriteLine(p);
+        }
+        internal void Space()
+        {
+            this.Write(" ");
+        }
+
     }
     public class CFicheroCS : CFicheroDeCodigo
     {
@@ -359,54 +387,21 @@ namespace LibCC
         }
         public CNameSpace NameSpace;
         public bool NameSpaceGenerado = false;
-
-        public bool IsOpen;
-
-        internal void WriteLine()
-        {
-            this.WriteLine("");
-        }
-        internal void WriteLine(string p)
-        {
-            this.Open();
-            tw.WriteLine(p);
-        }
-        private void Open()
+        protected override void Open()
         {
             if (!this.IsOpen)
             {
-                if (!this.Padre.Existe())
-                {
-                    this.Padre.CreateDirectory();
-                }
-                tw = File.CreateText(this.NombreCompleto("\\"));
+                base.Open();
                 foreach (IGeneraNombreNamespace ns in this.lUsing)
                 {
-                    this.tw.WriteLine("using " + ns.NombreCompleto() + ";");
+                    this.sw.WriteLine("using " + ns.NombreCompleto() + ";");
                 }
-                tw.WriteLine();
-                this.IsOpen = true;
+                sw.WriteLine();
             }
         }
-        internal void Close()
-        {
-            tw.Close();
-            this.IsOpen = false;
-        }
 
-        internal void Write(string p)
-        {
-            this.Open();
-            tw.Write(p);
-        }
-
-        internal void Space()
-        {
-            this.Write(" ");
-        }
-
-        internal List<IGeneraNombreNamespace> _lUsing;
-        public List<IGeneraNombreNamespace> lUsing
+        protected List<IGeneraNombreNamespace> _lUsing;
+        protected List<IGeneraNombreNamespace> lUsing
         {
             get
             {
@@ -432,16 +427,18 @@ namespace LibCC
         {
             lNameSpaceCreados.Clear();
         }
-        private static CNameSpace _UltimoCreado;
         public static CNameSpace UltimoCreado
         {
             get
             {
-                return _UltimoCreado;
-            }
-            private set
-            {
-                _UltimoCreado = value;
+                if (lNameSpaceCreados.Count > 0)
+                {
+                    return lNameSpaceCreados[lNameSpaceCreados.Count - 1];
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
         public CNameSpace(CNameSpace padre, string Nombre)
@@ -451,14 +448,10 @@ namespace LibCC
             {
                 padre.AddNameSpaceHijo(this);
             }
-            _UltimoCreado = this;
             CNameSpace.lNameSpaceCreados.Add(this);
         }
         public CNameSpace(string Nombre)
-            : this(_UltimoCreado, Nombre)
-        {
-
-        }
+            : this(UltimoCreado, Nombre) { }
         private List<IClasificador> _lClasificador;
         protected List<IClasificador> lClasificador
         {
@@ -566,11 +559,6 @@ namespace LibCC
                 }
             }
         }
-
-        public bool Existe()
-        {
-            throw new NotImplementedException();
-        }
         public string NombreCompleto(string Separador)
         {
             if (this.NameSpace == null)
@@ -636,9 +624,110 @@ namespace LibCC
     }
     public enum EClassAccess { Public, Protected, Internal, Private }
     public enum EAccess { Public, Protected, Internal, Private }
-    interface IContenibleEnClase
+    public interface IGenerable
     {
         void Genera(CFicheroCS FicheroCS);
+    }
+    interface IContenibleEnClase : IGenerable
+    {
+    }
+    interface IContenibleEnInterfaz : IGenerable
+    {
+    }
+    public class CPropiedad : IContenibleEnClase
+    {
+        private bool DefaultGet;
+        private bool DefaultSet;
+        protected HashSet<CModifierBase> _setModifier = null;
+        public HashSet<CModifierBase> setModifier
+        {
+            get
+            {
+                if (_setModifier == null)
+                {
+                    _setModifier = new HashSet<CModifierBase>();
+                }
+                return _setModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.setModifier.Add(modifier);
+        }
+        public string Nombre;
+        private ITipoDato _TipoDato = CTDB.tdVoid;
+        public ITipoDato TipoDato
+        {
+            get
+            {
+                return this._TipoDato;
+            }
+            set
+            {
+                this._TipoDato = value;
+            }
+        }
+
+        protected List<IGenerable> lGet;
+        protected List<IGenerable> lSet;
+
+        public CPropiedad(CClase Clase, string Nombre, ITipoDato TipoDato, bool DefaultGet = false, bool DefaultSet = false)
+        {
+            Clase.AddContenibleEnClase(this);
+            this.Nombre = Nombre;
+            this.TipoDato = TipoDato;
+            this.DefaultGet = DefaultGet;
+            this.DefaultSet = DefaultSet;
+        }
+        public CPropiedad(string Nombre, ITipoDato TipoDato, bool DefaultGet = false, bool DefaultSet = false) : this(CClase.UltimaGenerada, Nombre, TipoDato, DefaultGet, DefaultSet) { }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.AddTab();
+            fich.WriteTabs();
+            LibCCUtils.WriteModifiers(fich, this.setModifier);
+            fich.Write(this.TipoDato.Nombre);
+            fich.Space();
+            fich.Write(this.Nombre);
+            fich.Write("{");
+            if (this.DefaultGet)
+            {
+                fich.Write(" get;");
+            }
+            else
+            {
+                fich.WriteLine();
+                fich.AddTab();
+                fich.WriteTabs();
+                fich.WriteLine("get{");
+                fich.AddTab();
+                //falta el foreach
+                fich.RemoveTab();
+                fich.WriteLine("}");
+                fich.RemoveTab();
+            }
+            if (this.DefaultSet)
+            {
+                fich.Write(" set; ");
+            }
+            else
+            {
+                if (lSet != null)
+                {
+                    fich.WriteLine();
+                    fich.AddTab();
+                    fich.WriteTabs();
+                    fich.WriteLine("set{");
+                    fich.AddTab();
+                    //falta el foreach
+                    fich.RemoveTab();
+                    fich.WriteLine("}");
+                    fich.RemoveTab();
+                }
+            }
+            fich.Write("}");//el de la propiedad en sí
+            fich.WriteLine();
+            fich.RemoveTab();
+        }
     }
     public class CClase : IClasificador, IContenibleEnClase, ITipoDato
     {
@@ -696,10 +785,6 @@ namespace LibCC
                 }
             }
         }
-        public bool Existe()
-        {
-            throw new NotImplementedException();
-        }
         public string NombreCompleto(string Separador)
         {
             if (this.NameSpace == null)
@@ -723,10 +808,22 @@ namespace LibCC
                 _Nombre = value;
             }
         }
-        public EClassAccess ClassAccess = EClassAccess.Internal;
-        protected void WriteClassAccess(CFicheroCS fich)
+
+        protected HashSet<CModifierBase> _setModifier = null;
+        public HashSet<CModifierBase> setModifier
         {
-            fich.Write(LibCCUtils.StringClassAccess(this.ClassAccess));
+            get
+            {
+                if (_setModifier == null)
+                {
+                    _setModifier = new HashSet<CModifierBase>();
+                }
+                return _setModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.setModifier.Add(modifier);
         }
         public void Genera()
         {
@@ -735,7 +832,7 @@ namespace LibCC
         public void Genera(CFicheroCS fich)
         {
             fich.WriteTabs();
-            this.WriteClassAccess(fich);
+            LibCCUtils.WriteModifiers(fich, this.setModifier);
             fich.WriteLine("class " + this.Nombre + "{");
             foreach (IContenibleEnClase cec in this.lContenibleEnClase)
             {
@@ -790,8 +887,8 @@ namespace LibCC
     public class CMetodo : IContenibleEnClase
     {
         public string Nombre;
-        private string _TipoDatoDevuelto = "void";
-        public string TipoDatoDevuelto
+        private ITipoDato _TipoDatoDevuelto = CTDB.tdVoid;
+        public ITipoDato TipoDatoDevuelto
         {
             get
             {
@@ -802,30 +899,34 @@ namespace LibCC
                 this._TipoDatoDevuelto = value;
             }
         }
+        protected HashSet<CModifierBase> _setModifier = null;
+        public HashSet<CModifierBase> setModifier
+        {
+            get
+            {
+                if (_setModifier == null)
+                {
+                    _setModifier = new HashSet<CModifierBase>();
+                }
+                return _setModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.setModifier.Add(modifier);
+        }
         public CMetodo(CClase Clase, string Nombre)
         {
             Clase.AddContenibleEnClase(this);
             this.Nombre = Nombre;
         }
         public CMetodo(string Nombre) : this(CClase.UltimaGenerada, Nombre) { }
-        private EAccess _Access = EAccess.Public;
-        public EAccess Access
-        {
-            get
-            {
-                return this._Access;
-            }
-            set
-            {
-                this._Access = value;
-            }
-        }
         public void Genera(CFicheroCS fich)
         {
             fich.AddTab();
             fich.WriteTabs();
-            fich.Write(LibCCUtils.StringAccess(this.Access));
-            fich.Write(this.TipoDatoDevuelto);
+            LibCCUtils.WriteModifiers(fich, this.setModifier);
+            fich.Write(this.TipoDatoDevuelto.Nombre);
             fich.Space();
             fich.Write(this.Nombre);
             fich.Write("(");
@@ -893,6 +994,22 @@ namespace LibCC
                 this._TipoDato = value;
             }
         }
+        protected HashSet<CModifierBase> _setModifier = null;
+        public HashSet<CModifierBase> setModifier
+        {
+            get
+            {
+                if (_setModifier == null)
+                {
+                    _setModifier = new HashSet<CModifierBase>();
+                }
+                return _setModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.setModifier.Add(modifier);
+        }
         public CAtributo(CClase Clase, string Nombre, ITipoDato TipoDato)
         {
             Clase.AddContenibleEnClase(this);
@@ -916,7 +1033,7 @@ namespace LibCC
         {
             fich.AddTab();
             fich.WriteTabs();
-            fich.Write(LibCCUtils.StringAccess(this.Access));
+            LibCCUtils.WriteModifiers(fich, this.setModifier);
             fich.Write(this.TipoDato.Nombre);
             fich.Space();
             fich.Write(this.Nombre);
@@ -981,6 +1098,335 @@ namespace LibCC
             get
             {
                 return _tdVoid;
+            }
+        }
+    }
+    public class CInterfaz : IClasificador, IContenibleEnClase, ITipoDato
+    {
+        protected HashSet<CModifierBase> _setModifier = null;
+        public HashSet<CModifierBase> setModifier
+        {
+            get
+            {
+                if (_setModifier == null)
+                {
+                    _setModifier = new HashSet<CModifierBase>();
+                }
+                return _setModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.setModifier.Add(modifier);
+        }
+        private static CInterfaz _UltimaGenerada;
+        public static CInterfaz UltimaGenerada { get { return _UltimaGenerada; } }
+        public CFicheroCS FicheroCS{get;set;}
+        public CInterfaz(CNameSpace NameSpace, CFicheroCS FicheroCS, string Nombre)
+        {
+            this.Nombre = Nombre;
+            if (NameSpace == null)
+            {
+                throw new Exception("No puede haber una clase sin NameSpace. Namespace es null");
+            }
+            if (FicheroCS == null)
+            {
+                throw new Exception("No puede haber una clase sin FicheroCS. FicheroCS es null");
+            }
+
+            NameSpace.AddClasificador(this);
+            this.FicheroCS = FicheroCS;
+            _UltimaGenerada = this;
+        }
+        public CInterfaz(string Nombre) : this(CNameSpace.UltimoCreado, CFicheroCS.UltimoCreado, Nombre) { }
+        private CNameSpace _NameSpace;
+        public CNameSpace NameSpace
+        {
+            get
+            {
+                return _NameSpace;
+            }
+            set
+            {
+                if (this._NameSpace == null)
+                {
+                    if (value != null)
+                    {
+                        this._NameSpace = value;
+                    }
+                }
+                else
+                {
+                    this._NameSpace.RemoveClasificador(this);
+                    this._NameSpace = value;
+                }
+            }
+        }
+        public string NombreCompleto(string Separador)
+        {
+            if (this.NameSpace == null)
+            {
+                return this.Nombre;
+            }
+            else
+            {
+                return this.NameSpace.NombreCompleto(Separador) + Separador + this.Nombre;
+            }
+        }
+        private string _Nombre;
+        public string Nombre
+        {
+            get
+            {
+                return _Nombre;
+            }
+            set
+            {
+                _Nombre = value;
+            }
+        }
+        public void Genera()
+        {
+            this.Genera(this.FicheroCS);
+        }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.WriteTabs();
+            LibCCUtils.WriteModifiers(fich, this.setModifier);
+            fich.WriteLine("interface " + this.Nombre + "{");
+            foreach (IContenibleEnInterfaz cec in this.lContenibleEnInterfaz)
+            {
+                cec.Genera(FicheroCS);
+            }
+            fich.WriteTabs();
+            fich.WriteLine("}");
+        }
+        private List<IContenibleEnInterfaz> lContenibleEnInterfaz = new List<IContenibleEnInterfaz>();
+        internal void AddContenibleEnInterfaz(IContenibleEnInterfaz ContenibleEnInterfaz)
+        {
+            lContenibleEnInterfaz.Add(ContenibleEnInterfaz);
+        }
+
+        internal List<IGeneraNombreNamespace> _lUsing;
+        public List<IGeneraNombreNamespace> lUsing
+        {
+            get
+            {
+                if (this._lUsing == null)
+                {
+                    this._lUsing = new List<IGeneraNombreNamespace>();
+                }
+                return this._lUsing;
+            }
+        }
+        public void AddUsing(IGeneraNombreNamespace NombreNameSpace)
+        {
+            this.lUsing.Add(NombreNameSpace);
+        }
+    }
+    public class CMetodoInterfaz : IContenibleEnInterfaz
+    {
+        public string Nombre;
+        private ITipoDato _TipoDatoDevuelto = CTDB.tdVoid;
+        public ITipoDato TipoDatoDevuelto
+        {
+            get
+            {
+                return this._TipoDatoDevuelto;
+            }
+            set
+            {
+                this._TipoDatoDevuelto = value;
+            }
+        }
+        public CMetodoInterfaz(CInterfaz Interfaz, string Nombre)
+        {
+            Interfaz.AddContenibleEnInterfaz(this);
+            this.Nombre = Nombre;
+        }
+        public CMetodoInterfaz(string Nombre) : this(CInterfaz.UltimaGenerada, Nombre) { }
+        protected HashSet<CModifierBase> _SetModifier = null;
+        public HashSet<CModifierBase> SetModifier
+        {
+            get
+            {
+                if (_SetModifier == null)
+                {
+                    _SetModifier = new HashSet<CModifierBase>();
+                }
+                return _SetModifier;
+            }
+        }
+        public void AddModifier(CModifierBase modifier)
+        {
+            this.SetModifier.Add(modifier);
+        }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.AddTab();
+            fich.WriteTabs();
+            LibCCUtils.WriteModifiers(fich, this.SetModifier);
+            fich.Write(this.TipoDatoDevuelto.Nombre);
+            fich.Space();
+            fich.Write(this.Nombre);
+            fich.Write("(");
+            bool Primero = true;
+            if (_lParametros != null)
+            {
+                foreach (CParametro p in this.lParametros)
+                {
+                    if (Primero)
+                    {
+                        Primero = false;
+                    }
+                    else
+                    {
+                        fich.Write(",");
+                    }
+                    p.Genera(fich);
+                }
+            }
+            fich.Write(");");
+            fich.WriteLine();
+            fich.RemoveTab();
+        }
+        private List<CParametro> _lParametros;
+        public List<CParametro> lParametros
+        {
+            get
+            {
+                if (_lParametros == null)
+                {
+                    _lParametros = new List<CParametro>();
+                }
+                return _lParametros;
+            }
+        }
+        public void AddParameter(String param1, ITipoDato td)
+        {
+            this.lParametros.Add(new CParametro(param1, td));
+        }
+    }
+    public class CInferfazPropiedad : IContenibleEnInterfaz
+    {
+        public string Nombre;
+        private ITipoDato _TipoDato = CTDB.tdVoid;
+        public ITipoDato TipoDato
+        {
+            get
+            {
+                return this._TipoDato;
+            }
+            set
+            {
+                this._TipoDato = value;
+            }
+        }
+        protected bool TieneGet;
+        protected bool TieneSet;
+
+        public CInferfazPropiedad(CInterfaz Interfaz, string Nombre, ITipoDato TipoDato, bool TieneGet, bool TieneSet)
+        {
+            Interfaz.AddContenibleEnInterfaz(this);
+            this.Nombre = Nombre;
+            this.TipoDato = TipoDato;
+            this.TieneGet = TieneGet;
+            this.TieneSet = TieneSet;
+            if ((!TieneGet) && (!TieneSet))
+            {
+                throw new Exception("No se puede tener una propiedad sin get ni set");
+            }
+        }
+        public CInferfazPropiedad(string Nombre, ITipoDato TipoDato, bool TieneGet, bool TieneSet) : this(CInterfaz.UltimaGenerada, Nombre, TipoDato, TieneGet, TieneSet) { }
+        public void Genera(CFicheroCS fich)
+        {
+            fich.AddTab();
+            fich.WriteTabs();
+            fich.Write(this.TipoDato.Nombre);
+            fich.Space();
+            fich.Write(this.Nombre);
+            fich.Write("{");
+            bool Primero = true;
+            if (this.TieneGet)
+            {
+                fich.Write("get;");
+                Primero = false;
+            }
+            if (this.TieneSet)
+            {
+                if (!Primero)
+                {
+                    fich.Space();
+                }
+                fich.Write("set;");
+            }
+            fich.Write("}");
+            fich.WriteLine();
+            fich.RemoveTab();
+        }
+    }
+
+    public class CModifierBase
+    {
+        protected string _Nombre;
+        /// <summary>
+        /// Escribe en el ficheroCS la palabra del modificador.
+        /// </summary>
+        /// <param name="fich"></param>
+        /// <returns>True si escribe algo y false si no escribe nada. Se usa para poner o no espacios de separación</returns>
+        public bool Genera(CFicheroCS fich)
+        {
+            if (string.IsNullOrWhiteSpace(_Nombre))
+            {
+                return false;
+            }
+            else
+            {
+                fich.Write(_Nombre);
+                return true;
+            }
+        }
+    }
+    public class CPublic : CModifierBase
+    {
+        public CPublic()
+        {
+            this._Nombre = "public";
+        }
+    }
+    public class CProtected : CModifierBase
+    {
+        public CProtected()
+        {
+            _Nombre = "protected";
+        }
+    }
+    public class CPrivate : CModifierBase
+    {
+        public CPrivate()
+        {
+            _Nombre = "private";
+        }
+    }
+    public class CInternal : CModifierBase
+    {
+        public CInternal()
+        {
+            _Nombre = "";//"internal";
+        }
+    }
+    public static class Modifiers
+    {
+        private static CPublic _Public;
+        public static CPublic Public
+        {
+            get
+            {
+                if (_Public == null)
+                {
+                    _Public = new CPublic();
+                }
+                return _Public;
             }
         }
     }
