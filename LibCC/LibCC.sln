@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreaModeloInventario", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCUnitTest", "..\CCUnitTest\CCUnitTest.csproj", "{B4AC3362-9B78-4452-BAD4-76D691DEA017}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibIIS", "..\..\InventarioInformaticaSergas\LibIIS\LibIIS.csproj", "{61ABB709-DD5A-4F28-8610-28DF4D16830A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B4AC3362-9B78-4452-BAD4-76D691DEA017}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4AC3362-9B78-4452-BAD4-76D691DEA017}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4AC3362-9B78-4452-BAD4-76D691DEA017}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61ABB709-DD5A-4F28-8610-28DF4D16830A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61ABB709-DD5A-4F28-8610-28DF4D16830A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61ABB709-DD5A-4F28-8610-28DF4D16830A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61ABB709-DD5A-4F28-8610-28DF4D16830A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
